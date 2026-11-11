@@ -1,0 +1,16 @@
+[project]
+name = "turismo-cr"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # ruff format maneja el largo de línea
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
