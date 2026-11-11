@@ -86,12 +86,14 @@ def variacion_interanual(con, **filtros) -> pd.DataFrame:
 
 def ranking_paises(con, top: int = 15, **filtros) -> pd.DataFrame:
     """P2: países con más llegadas en el último año del rango y su crecimiento
-    frente al año anterior, comparando solo los meses que ambos años tienen."""
+    frente al año anterior, comparando solo los meses que ambos años tienen.
+    Excluye las filas agregadas "Otros <región>", que no son un país."""
     hasta = filtros["hasta"]
     base_sql, p = _base(**{**filtros, "desde": hasta - 1})
     sql = f"""
     WITH m AS (
-      SELECT p.pais, p.region, d.anio, d.mes, sum(f.llegadas) AS llegadas {base_sql} GROUP BY ALL
+      SELECT p.pais, p.region, d.anio, d.mes, sum(f.llegadas) AS llegadas
+      {base_sql} AND p.pais NOT LIKE 'Otros %' GROUP BY ALL
     ),
     meses_comunes AS (
       SELECT mes FROM m GROUP BY mes HAVING count(DISTINCT anio) = 2

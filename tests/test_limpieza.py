@@ -113,6 +113,24 @@ def test_variacion_interanual():
     assert var["variacion_interanual"].round(4).eq(0.5).all()
 
 
+def test_ranking_excluye_filas_otros():
+    pytest.importorskip("duckdb")
+    from src.cargar import construir
+    from src.consultas import ranking_paises
+
+    fechas = pd.date_range("2024-01-01", "2025-12-01", freq="MS")
+    filas = []
+    for pais, region, base in [("Canadá", "América del Norte", 100), ("Otros Europa", "Europa", 500)]:
+        for i, f in enumerate(fechas):
+            filas.append({"fecha": f, "pais": pais, "region": region, "via": "todas",
+                          "llegadas": base * (1 if i < 12 else 2)})  # fmt: skip
+    datos = pd.DataFrame(filas)
+    serie = datos.groupby(["fecha", "via"], as_index=False)["llegadas"].sum()
+    con = construir(datos, serie, ":memory:")
+    rk = ranking_paises(con, via="todas", desde=2024, hasta=2025, regiones=[], paises=[])
+    assert rk["pais"].tolist() == ["Canadá"]
+
+
 PDF_2025 = RAW / "2025-12_Llegadas_internacionales.pdf"
 
 
