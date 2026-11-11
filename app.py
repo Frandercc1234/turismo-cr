@@ -116,7 +116,11 @@ else:
     rk["texto"] = rk["crecimiento"].map(pct)
     fig = px.bar(rk.sort_values("llegadas"), x="llegadas", y="pais", orientation="h", text="texto",
                  color="region", labels={"llegadas": "Llegadas", "pais": "", "region": "Región"})  # fmt: skip
-    fig.update_layout(margin=dict(t=10, b=0), height=max(350, 28 * len(rk)))
+    fig.update_layout(
+        margin=dict(t=10, b=0),
+        height=max(350, 28 * len(rk)),
+        legend=dict(orientation="h", y=-0.15, title_text=""),
+    )
     st.plotly_chart(fig, use_container_width=True)
     st.caption(f"Crecimiento = mismos meses de {hasta} vs {hasta - 1}.")
 
@@ -133,11 +137,16 @@ else:
     )
     tabla = mc.pivot(index="pais", columns="mes", values="participacion").reindex(columns=range(1, 13))
     tabla.columns = MESES_CORTOS
-    fig = px.imshow(tabla, color_continuous_scale="Blues", aspect="auto", text_auto=".0%",
+    fig = px.imshow(tabla, color_continuous_scale="Blues", aspect="auto",
                     labels={"color": "% del año", "x": "", "y": ""})  # fmt: skip
+    fig.update_coloraxes(showscale=False)
+    fig.update_traces(hovertemplate="%{y} · %{x}: %{z:.1%}<extra></extra>")
     fig.update_layout(margin=dict(t=10, b=0))
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("Cada fila suma 100%: qué parte de las llegadas de ese país cae en cada mes.")
+    st.caption(
+        "Cada fila suma 100%: qué parte de las llegadas de ese país cae en cada mes. "
+        "Más oscuro = más peso; toca una celda para ver el porcentaje."
+    )
 
 # ---------- Descarga y metodología ----------
 datos = q.datos_filtrados(con, **filtros)
