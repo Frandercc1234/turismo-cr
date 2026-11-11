@@ -69,7 +69,8 @@ def leer_todo() -> tuple[pd.DataFrame, pd.DataFrame]:
     manifiesto = pd.read_csv(RAW / "archivos.csv")
     datos, series = [], []
     for f in manifiesto.itertuples():
-        grilla = extraer_cuadro_pdf(RAW / f.archivo, pagina=int(f.pagina), cuadro=int(f.cuadro))
+        paginas = int(f.paginas) if pd.notna(f.paginas) else 1
+        grilla = extraer_cuadro_pdf(RAW / f.archivo, int(f.pagina), int(f.cuadro), paginas)
         if f.tipo == "paises":
             d, t = leer_cuadro(grilla, anio=int(f.anio), via=f.via)
             validar(d, t)

@@ -12,7 +12,7 @@ Proyecto de portafolio: dashboard de llegadas internacionales a Costa Rica con d
 ## Datos
 
 - `data/raw/` es solo lectura. Nunca modificar los PDF originales.
-- Cada cuadro usado va en `data/raw/archivos.csv`: archivo, página, cuadro, tipo (paises/serie), año, vía, URL y fecha de descarga.
+- Cada cuadro usado va en `data/raw/archivos.csv`: archivo, página, páginas que ocupa, cuadro, tipo (paises/serie), año, vía, URL y fecha de descarga.
 - `extraer_cuadro_pdf()` asigna cada número a la columna más cercana por posición x. Si el ICT cambia el layout, falla con "fuera de columna" en vez de cargar mal.
 - Cuadros del ICT: fila TOTAL arriba, zonas en MAYÚSCULAS con su subtotal, países debajo. `limpieza.py` descarta TOTAL y zonas; nunca sumarlos.
 - La vía "todas" ya incluye aérea y terrestre. Toda consulta filtra por una sola vía.

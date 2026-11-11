@@ -44,7 +44,7 @@ op = q.opciones(con)
 
 # ---------- Filtros ----------
 DEFAULTS = {"via": "todas" if "todas" in op["vias"] else op["vias"][0],
-            "rango": (op["anios"][0], op["anios"][-1]), "regiones": [], "paises": []}  # fmt: skip
+            "rango": (max(2019, op["anios"][0]), op["anios"][-1]), "regiones": [], "paises": []}  # fmt: skip
 for k, v in DEFAULTS.items():
     st.session_state.setdefault(k, v)
 
@@ -64,7 +64,7 @@ with st.sidebar:
     if st.session_state.regiones:
         disponibles = disponibles[disponibles["region"].isin(st.session_state.regiones)]
     st.multiselect("País", disponibles["pais"], key="paises")
-    st.button("Restablecer filtros", on_click=restablecer, width="stretch")
+    st.button("Restablecer filtros", on_click=restablecer, use_container_width=True)
 
 desde, hasta = st.session_state.rango
 filtros = dict(via=st.session_state.via, desde=desde, hasta=hasta,
@@ -99,7 +99,7 @@ fig.update_traces(selector=dict(name="Mismo mes 2019"), line_dash="dot")
 fig.add_vrect(x0="2020-03-01", x1="2021-10-31", fillcolor="gray", opacity=0.1, line_width=0,
               annotation_text="Pandemia", annotation_position="top left")  # fmt: skip
 fig.update_layout(legend=dict(orientation="h", y=1.1), margin=dict(t=30, b=0))
-st.plotly_chart(fig, width="stretch")
+st.plotly_chart(fig, use_container_width=True)
 
 # ---------- P2: países ----------
 st.subheader(f"2. ¿Qué países aportan más en {hasta}?")
@@ -117,7 +117,7 @@ else:
     fig = px.bar(rk.sort_values("llegadas"), x="llegadas", y="pais", orientation="h", text="texto",
                  color="region", labels={"llegadas": "Llegadas", "pais": "", "region": "Región"})  # fmt: skip
     fig.update_layout(margin=dict(t=10, b=0), height=max(350, 28 * len(rk)))
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
     st.caption(f"Crecimiento = mismos meses de {hasta} vs {hasta - 1}.")
 
 # ---------- P3: estacionalidad ----------
@@ -136,7 +136,7 @@ else:
     fig = px.imshow(tabla, color_continuous_scale="Blues", aspect="auto", text_auto=".0%",
                     labels={"color": "% del año", "x": "", "y": ""})  # fmt: skip
     fig.update_layout(margin=dict(t=10, b=0))
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
     st.caption("Cada fila suma 100%: qué parte de las llegadas de ese país cae en cada mes.")
 
 # ---------- Descarga y metodología ----------

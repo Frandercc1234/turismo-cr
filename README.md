@@ -12,21 +12,27 @@ Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste,
 
 ## Hallazgos
 
-_Pendiente (día 4). Tres conclusiones con cifras._
+Preliminares, a validar en el notebook (día 4):
+
+1. **El país no volvió a 2019, Guanacaste sí lo superó.** En 2025 llegaron 2.943.991 turistas por todas las vías, 6,2% menos que en 2019. Por LIR llegaron 904.762, 50,9% más que en 2019.
+2. **Norteamérica sostiene el crecimiento, Europa cae.** En LIR, Canadá creció 6,2% y Estados Unidos 2,3% frente a 2024. Reino Unido bajó 22,8% y Francia 11,2%.
+3. **La temporada alta en LIR pica en marzo y toca fondo en setiembre.** En 2025 marzo tuvo 117.044 llegadas y setiembre 22.176, cinco veces menos.
 
 ## Datos
 
 - **Fuente:** ICT, Informes Estadísticos > Llegadas internacionales. Datos de la Dirección General de Migración y Extranjería.
 - **Archivos usados:** `data/raw/archivos.csv` (archivo, hoja, año, vía, URL y fecha de descarga). Los originales están en `data/raw/` sin modificar.
 - **Formato:** el ICT publica un PDF por año. `src/limpieza.py` lee las tablas del PDF ubicando cada número por su posición en la página.
-- **Cobertura actual (informe dic-2025):**
-  - Detalle por país x mes: 2025, 72 países en 8 regiones, vías todas / aérea / SJO / LIR / terrestre (cuadros 1, 3, 5, 7, 9).
-  - Serie nacional mensual 2019-2025: todas / aérea / SJO / LIR (cuadros 11-14).
+- **Archivos:** informe mensual dic-2025 y Anuario Estadístico de Turismo 2024.
+- **Cobertura actual:**
+  - Detalle por país x mes: 2024 y 2025, 73 países en 8 regiones. Vías: todas, aérea, SJO, LIR, terrestre. Marítima solo 2024.
+  - Serie mensual publicada 2012-2025 para todas, aérea, SJO, LIR y terrestre. Marítima 2012-2024.
+  - Los dos PDF coinciden mes a mes en 2019-2024 para las cuatro vías que comparten.
 
 ### Limitaciones
 
-- Cada informe anual trae el detalle país x mes de un solo año. La pregunta 1 usa la serie nacional 2019-2025; el crecimiento por país necesita el informe del año anterior.
-- No hay tabla de llegadas por vía marítima. Las vías disponibles son: todas, aérea, terrestre, y los aeropuertos SJO y LIR.
+- Detalle por país solo para 2024 y 2025. La pregunta 1 sin filtro usa la serie publicada; con filtro de país arranca en 2024.
+- El informe 2025 no trae vía marítima; solo existe para 2024 y antes.
 - 2020 y 2021 están afectados por el cierre de fronteras. Las variaciones de esos años no son demanda normal.
 - Un mes sin dato queda vacío, no como cero.
 - _Agregar aquí los países o años que falten._

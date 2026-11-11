@@ -39,7 +39,7 @@ ZONAS = {
     "OTROS": "Otros",
 }
 
-VIAS = {"todas", "aerea", "terrestre", "sjo", "lir"}
+VIAS = {"todas", "aerea", "terrestre", "maritima", "sjo", "lir"}
 
 
 def _sin_tildes(texto: str) -> str:
@@ -53,6 +53,7 @@ def normalizar_texto(valor: object) -> str:
         return ""
     texto = str(valor).replace("\n", " ")
     texto = re.sub(r"\s*(\d+/|\*+)\s*$", "", texto)
+    texto = re.sub(r"(?<=[^\W\d_])\d$", "", texto.strip())  # "Puerto Rico1" -> "Puerto Rico"
     return re.sub(r"\s+", " ", texto).strip()
 
 
@@ -75,7 +76,7 @@ def a_numero(valor: object) -> float:
 NUM = re.compile(r"^\d{1,3}$")
 
 
-def _lineas(palabras: list[dict], tolerancia: float = 2.5) -> list[list[dict]]:
+def _lineas(palabras: list[dict], tolerancia: float = 4.0) -> list[list[dict]]:
     lineas: list[list[dict]] = []
     for w in sorted(palabras, key=lambda w: (round(w["top"]), w["x0"])):
         if lineas and abs(lineas[-1][0]["top"] - w["top"]) <= tolerancia:
@@ -98,49 +99,64 @@ def _numeros(tokens: list[dict]) -> list[tuple[float, int]]:
     return [(x, int(t)) for x, t in nums]
 
 
-def extraer_cuadro_pdf(pdf: str | Path, pagina: int, cuadro: int) -> pd.DataFrame:
-    """Devuelve la tabla del cuadro como grilla: col 0 = etiqueta, luego una col por encabezado.
+def _es_anual(texto: str) -> bool:
+    return re.sub(r"[^a-z]", "", texto.lower()) == "enedic"  # "Ene-Dic", "Ene.-Dic."
 
-    Encabezados válidos: meses (cuadros por país) o años (series 2019-2025).
-    Celdas vacías quedan como None.
-    """
-    with pdfplumber.open(pdf) as doc:
-        palabras = doc.pages[pagina - 1].extract_words()
+
+def _grilla_pagina(palabras: list[dict], cuadro: int | None) -> list[list]:
+    """Filas de una página. Si `cuadro` viene, recorta a ese cuadro (puede haber dos por página)."""
     lineas = _lineas(palabras)
+    if cuadro is not None:
+        titulos = [i for i, ln in enumerate(lineas) if ln[0]["text"].lower() == "cuadro" and len(ln) > 1]
+        inicio = next(i for i in titulos if lineas[i][1]["text"] == str(cuadro))
+        fin = next((i for i in titulos if i > inicio), len(lineas))
+        lineas = lineas[inicio:fin]
 
-    # recortar al cuadro pedido (una página puede tener dos cuadros)
-    titulos = [i for i, ln in enumerate(lineas) if ln[0]["text"].lower() == "cuadro" and len(ln) > 1]
-    inicio = next(i for i in titulos if lineas[i][1]["text"] == str(cuadro))
-    fin = next((i for i in titulos if i > inicio), len(lineas))
-    lineas = lineas[inicio:fin]
-
-    # encabezado: línea con meses o con años
     def es_col(t: str) -> bool:
         return _sin_tildes(t).lower() in MESES or re.fullmatch(r"(19|20)\d\d", t) is not None
 
     i_enc = next(i for i, ln in enumerate(lineas) if sum(es_col(w["text"]) for w in ln) >= 5)
     columnas = [(w["x1"], w["text"]) for w in lineas[i_enc] if es_col(w["text"])]
-    # columna anual (Ene-Dic) en cuadros por mes: aparece arriba del encabezado
-    anual = [w for ln in lineas[: i_enc + 1] for w in ln if w["text"] == "Ene-Dic"]
+    # columna anual en cuadros por mes: aparece arriba del encabezado
+    anual = [w for ln in lineas[: i_enc + 1] for w in ln if _es_anual(w["text"])]
     if anual and _sin_tildes(columnas[0][1]).lower() in MESES:
         columnas.append((anual[0]["x1"], "Ene-Dic"))
     xs = [x for x, _ in columnas]
-    borde = min(xs) - 45  # todo lo que está a la izquierda es etiqueta
+    borde = min(xs) - 45  # los números están a la derecha de esto
+    # tolerancia = media distancia entre columnas (los encabezados no siempre alinean igual que los datos)
+    tol = min(b - a for a, b in zip(xs, xs[1:], strict=False)) / 2
 
     filas = [["", *[c for _, c in columnas]]]
     for ln in lineas[i_enc + 1 :]:
-        es_dato = [w["x1"] >= borde and NUM.match(w["text"]) is not None for w in ln]
-        etiqueta = " ".join(w["text"] for w, dato in zip(ln, es_dato, strict=True) if not dato)
         if re.match(r"(nota|fuente)", ln[0]["text"], re.I):
             continue
+        es_dato = [w["x1"] >= borde and NUM.match(w["text"]) is not None for w in ln]
+        etiqueta = " ".join(w["text"] for w, dato in zip(ln, es_dato, strict=True) if not dato)
         valores: list[int | None] = [None] * len(columnas)
         for x, n in _numeros([w for w, dato in zip(ln, es_dato, strict=True) if dato]):
             j = min(range(len(xs)), key=lambda k: abs(xs[k] - x))
-            if abs(xs[j] - x) > 12:
+            if abs(xs[j] - x) > tol:
                 raise ValueError(f"Número {n} fuera de columna en '{etiqueta}' (x={x:.0f})")
             valores[j] = n
         if etiqueta or any(v is not None for v in valores):
             filas.append([etiqueta, *valores])
+    return filas
+
+
+def extraer_cuadro_pdf(pdf: str | Path, pagina: int, cuadro: int, paginas: int = 1) -> pd.DataFrame:
+    """Devuelve la tabla del cuadro como grilla: fila 0 = encabezados, col 0 = etiqueta.
+
+    `paginas` > 1 para cuadros que siguen en las páginas siguientes (anuario).
+    Encabezados válidos: meses (cuadros por país) o años (series). Celdas vacías = None.
+    """
+    filas: list[list] = []
+    with pdfplumber.open(pdf) as doc:
+        for k in range(paginas):
+            palabras = doc.pages[pagina - 1 + k].extract_words()
+            grilla = _grilla_pagina(palabras, cuadro if k == 0 else None)
+            if filas and grilla[0] != filas[0]:
+                raise ValueError(f"Encabezado distinto en página {pagina + k}: {grilla[0]}")
+            filas += grilla if k == 0 else grilla[1:]
     return pd.DataFrame(filas, dtype=object)
 
 

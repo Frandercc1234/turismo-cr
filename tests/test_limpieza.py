@@ -64,6 +64,21 @@ def test_sin_duplicados_ni_negativos(cuadro):
 def test_todos_los_paises_tienen_region(cuadro):
     datos, _ = leer_cuadro(cuadro, anio=2024, via="todas")
     assert datos["region"].notna().all()
+
+
+ANUARIO_2024 = RAW / "Anuario_de_Turismo_2024.pdf"
+
+
+@pytest.mark.skipif(not ANUARIO_2024.exists(), reason="Falta el anuario 2024 en data/raw")
+def test_anuario_2024_cuadra_con_informe_2025():
+    """leer_todo() falla si los dos PDF dan cifras distintas para un mismo mes."""
+    from src.cargar import leer_todo
+
+    datos, serie = leer_todo()
+    todas = datos[datos["via"] == "todas"]
+    assert todas.loc[todas["fecha"].dt.year == 2024, "llegadas"].sum() == 2_919_483
+    lir = serie[serie["via"] == "lir"]
+    assert lir.loc[lir["fecha"].dt.year == 2024, "llegadas"].sum() == 881_289
     assert datos.set_index("pais")["region"].to_dict()["Nicaragua"] == "América Central"
 
 
@@ -122,5 +137,6 @@ def test_pdf_real_cuadra_con_ict():
     anual = serie[serie["via"] == "todas"].groupby(serie["fecha"].dt.year)["llegadas"].sum()
     assert anual[2019] == 3_139_008  # Ene-Dic publicado en el Cuadro 11
     assert anual[2025] == 2_943_991
-    assert datos.loc[datos["via"] == "todas", "llegadas"].sum() == 2_943_991
+    todas_2025 = (datos["via"] == "todas") & (datos["fecha"].dt.year == 2025)
+    assert datos.loc[todas_2025, "llegadas"].sum() == 2_943_991
     assert datos["region"].notna().all()
