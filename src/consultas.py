@@ -113,11 +113,13 @@ def ranking_paises(con, top: int = 15, **filtros) -> pd.DataFrame:
 
 
 def mapa_calor(con, top: int = 12, **filtros) -> pd.DataFrame:
-    """P3: participación de cada mes en el año, por país (promedio del rango)."""
+    """P3: participación de cada mes en el año, por país (promedio del rango).
+    Excluye las filas agregadas "Otros <región>", que no son un país."""
     base_sql, p = _base(**filtros)
     sql = f"""
     WITH m AS (
-      SELECT p.pais, d.anio, d.mes, sum(f.llegadas) AS llegadas {base_sql} GROUP BY ALL
+      SELECT p.pais, d.anio, d.mes, sum(f.llegadas) AS llegadas
+      {base_sql} AND p.pais NOT LIKE 'Otros %' GROUP BY ALL
     ),
     principales AS (
       SELECT pais FROM m GROUP BY pais ORDER BY sum(llegadas) DESC LIMIT {int(top)}

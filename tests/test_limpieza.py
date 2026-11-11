@@ -116,7 +116,7 @@ def test_variacion_interanual():
 def test_ranking_excluye_filas_otros():
     pytest.importorskip("duckdb")
     from src.cargar import construir
-    from src.consultas import ranking_paises
+    from src.consultas import mapa_calor, ranking_paises
 
     fechas = pd.date_range("2024-01-01", "2025-12-01", freq="MS")
     filas = []
@@ -129,6 +129,8 @@ def test_ranking_excluye_filas_otros():
     con = construir(datos, serie, ":memory:")
     rk = ranking_paises(con, via="todas", desde=2024, hasta=2025, regiones=[], paises=[])
     assert rk["pais"].tolist() == ["Canadá"]
+    mc = mapa_calor(con, via="todas", desde=2024, hasta=2025, regiones=[], paises=[])
+    assert mc["pais"].unique().tolist() == ["Canadá"]
 
 
 PDF_2025 = RAW / "2025-12_Llegadas_internacionales.pdf"
