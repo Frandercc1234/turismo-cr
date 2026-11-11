@@ -11,6 +11,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+from src.indicadores import mes_semana_santa
 from src.limpieza import clave_pais, extraer_cuadro_pdf, leer_cuadro, leer_serie, nombre_preferido, validar
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -22,12 +23,49 @@ NOMBRES_MES = [
     "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre",
 ]  # fmt: skip
 
+# Idioma en que conviene atender a cada mercado. Es un criterio práctico, no el idioma
+# oficial (Canadá cuenta como inglés). Un país nuevo sin mapear hace fallar la carga.
+IDIOMA_POR_PAIS = {
+    # América Central
+    "Belice": "inglés", "El Salvador": "español", "Guatemala": "español",
+    "Honduras": "español", "Nicaragua": "español", "Panamá": "español",
+    # América del Norte
+    "Canadá": "inglés", "Estados Unidos": "inglés", "México": "español",
+    # América del Sur
+    "Argentina": "español", "Bolivia": "español", "Brasil": "portugués", "Chile": "español",
+    "Colombia": "español", "Ecuador": "español", "Guyana": "inglés", "Guyana Francesa": "francés",
+    "Paraguay": "español", "Perú": "español", "Surinam": "neerlandés", "Uruguay": "español",
+    "Venezuela": "español",
+    # Asia y el Pacífico
+    "Australia": "inglés", "China": "chino", "Filipinas": "inglés", "India": "inglés",
+    "Japón": "japonés", "Nueva Zelanda": "inglés", "Rep. de Corea (Sur)": "coreano",
+    "Taiwan": "chino", "Otros Asia y el Pacífico": "Varios",
+    # Caribe
+    "Bahamas": "inglés", "Bermuda": "inglés", "Cuba": "español", "Haití": "francés",
+    "Jamaica": "inglés", "Puerto Rico": "español", "República Dominicana": "español",
+    "Trinidad y Tobago": "inglés", "Otros Caribe": "Varios",
+    # Europa
+    "Alemania": "alemán", "Austria": "alemán", "Bélgica": "francés", "Dinamarca": "danés",
+    "Eslovaquia": "eslovaco", "España": "español", "Finlandia": "finés", "Francia": "francés",
+    "Hungría": "húngaro", "Irlanda": "inglés", "Israel": "hebreo", "Italia": "italiano",
+    "Noruega": "noruego", "Países Bajos": "neerlandés", "Polonia": "polaco", "Portugal": "portugués",
+    "Reino Unido": "inglés", "República Checa": "checo", "Rumanía": "rumano", "Rusia": "ruso",
+    "Suecia": "sueco", "Suiza": "alemán", "Otros Europa": "Varios",
+    # Oriente Medio
+    "Arabia Saudita": "árabe", "Egipto": "árabe", "Emiratos Árabes Unidos": "árabe",
+    "Jordania": "árabe", "Líbano": "árabe", "Otros Oriente Medio": "Varios",
+    # África
+    "Marruecos": "árabe", "Nigeria": "inglés", "Sudáfrica": "inglés", "Otros África": "Varios",
+}  # fmt: skip
+
 ESQUEMA = """
 CREATE TABLE dim_fecha (
-  fecha DATE PRIMARY KEY, anio INT, mes INT, nombre_mes VARCHAR, temporada VARCHAR
+  fecha DATE PRIMARY KEY, anio INT, mes INT, nombre_mes VARCHAR, temporada VARCHAR,
+  semana_santa BOOLEAN  -- mes que contiene el Jueves Santo
 );
 CREATE TABLE dim_pais (
-  pais_id INT PRIMARY KEY, pais VARCHAR UNIQUE, region VARCHAR NOT NULL
+  pais_id INT PRIMARY KEY, pais VARCHAR UNIQUE, region VARCHAR NOT NULL,
+  idioma VARCHAR  -- idioma de atención (IDIOMA_POR_PAIS)
 );
 CREATE TABLE fact_llegadas (
   fecha DATE REFERENCES dim_fecha, pais_id INT REFERENCES dim_pais,
@@ -46,6 +84,13 @@ CREATE TABLE serie_publicada (
 def temporada(mes: int) -> str:
     """Temporada alta = estación seca (diciembre a abril)."""
     return "Alta" if mes in (12, 1, 2, 3, 4) else "Baja"
+
+
+def validar_idiomas(paises) -> None:
+    """Falla si algún país no tiene idioma asignado en IDIOMA_POR_PAIS."""
+    faltan = sorted(set(paises) - set(IDIOMA_POR_PAIS))
+    if faltan:
+        raise ValueError(f"Países sin idioma en IDIOMA_POR_PAIS: {faltan}")
 
 
 def unificar_paises(datos: pd.DataFrame) -> pd.DataFrame:
@@ -98,9 +143,13 @@ def construir(datos: pd.DataFrame, serie: pd.DataFrame, ruta: Path | str = DB):
     fechas["mes"] = fechas["fecha"].dt.month
     fechas["nombre_mes"] = fechas["mes"].map(lambda m: NOMBRES_MES[m - 1])
     fechas["temporada"] = fechas["mes"].map(temporada)
+    fechas["semana_santa"] = [
+        m == mes_semana_santa(a) for a, m in zip(fechas["anio"], fechas["mes"], strict=True)
+    ]
 
     paises = datos[["pais", "region"]].drop_duplicates("pais").sort_values("pais")
     paises.insert(0, "pais_id", range(1, len(paises) + 1))
+    paises["idioma"] = paises["pais"].map(IDIOMA_POR_PAIS)  # país sin mapear queda NULL; ver validar_idiomas
 
     # DuckDB lee `fechas`, `paises`, `hechos` y `serie` por nombre de variable
     hechos = datos.merge(paises[["pais", "pais_id"]], on="pais")[  # noqa: F841
@@ -116,6 +165,7 @@ def construir(datos: pd.DataFrame, serie: pd.DataFrame, ruta: Path | str = DB):
 
 if __name__ == "__main__":
     datos, serie = leer_todo()
+    validar_idiomas(datos["pais"].unique())
     con = construir(datos, serie)
     n = con.execute("SELECT count(*) FROM fact_llegadas").fetchone()[0]
     m = con.execute("SELECT count(*) FROM serie_publicada").fetchone()[0]

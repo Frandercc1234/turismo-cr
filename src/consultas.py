@@ -47,11 +47,12 @@ def serie_mensual(con, **filtros) -> pd.DataFrame:
     """
     if filtros.get("regiones") or filtros.get("paises"):
         base_sql, p = _base(**filtros)
-        sql = f"SELECT d.fecha, d.mes, sum(f.llegadas) AS llegadas {base_sql} GROUP BY ALL ORDER BY 1"
+        sql = f"""SELECT d.fecha, d.mes, d.semana_santa, sum(f.llegadas) AS llegadas
+        {base_sql} GROUP BY ALL ORDER BY 1"""
     else:
         p = {k: filtros[k] for k in ("via", "desde", "hasta")}
         sql = """
-        SELECT d.fecha, d.mes, s.llegadas
+        SELECT d.fecha, d.mes, d.semana_santa, s.llegadas
         FROM serie_publicada s JOIN dim_fecha d USING (fecha)
         WHERE s.via = $via AND d.anio BETWEEN $desde AND $hasta
         ORDER BY 1
@@ -84,12 +85,23 @@ def variacion_interanual(con, **filtros) -> pd.DataFrame:
     return df[df["fecha"].dt.year >= filtros["desde"]].reset_index(drop=True)
 
 
-def ranking_paises(con, top: int = 15, **filtros) -> pd.DataFrame:
+MIN_PARTICIPACION = 0.005
+
+
+def ranking_paises(
+    con, top: int = 10, min_participacion: float = MIN_PARTICIPACION, **filtros
+) -> pd.DataFrame:
     """P2: países con más llegadas en el último año del rango y su crecimiento
     frente al año anterior, comparando solo los meses que ambos años tienen.
-    Excluye las filas agregadas "Otros <región>", que no son un país."""
+    Excluye las filas agregadas "Otros <región>", que no son un país.
+
+    `califica` marca a los países cuyas llegadas del año previo son al menos
+    `min_participacion` del total de la vía en ese año (sin filtro de región ni país):
+    así un salto de 50 a 100 llegadas no cuenta como "mayor crecimiento".
+    """
     hasta = filtros["hasta"]
     base_sql, p = _base(**{**filtros, "desde": hasta - 1})
+    total_sql, _ = _base(via=filtros["via"], desde=hasta - 1, hasta=hasta)
     sql = f"""
     WITH m AS (
       SELECT p.pais, p.region, d.anio, d.mes, sum(f.llegadas) AS llegadas
@@ -97,12 +109,18 @@ def ranking_paises(con, top: int = 15, **filtros) -> pd.DataFrame:
     ),
     meses_comunes AS (
       SELECT mes FROM m GROUP BY mes HAVING count(DISTINCT anio) = 2
+    ),
+    total_previo AS (
+      SELECT sum(f.llegadas) AS total {total_sql} AND d.anio = {hasta - 1}
+        AND (d.mes IN (SELECT mes FROM meses_comunes) OR NOT EXISTS (SELECT 1 FROM meses_comunes))
     )
     SELECT pais, region,
            sum(llegadas) FILTER (WHERE anio = {hasta}) AS llegadas,
            sum(llegadas) FILTER (WHERE anio = {hasta - 1}) AS llegadas_previo,
            sum(llegadas) FILTER (WHERE anio = {hasta}) /
-             NULLIF(sum(llegadas) FILTER (WHERE anio = {hasta - 1}), 0) - 1 AS crecimiento
+             NULLIF(sum(llegadas) FILTER (WHERE anio = {hasta - 1}), 0) - 1 AS crecimiento,
+           COALESCE(sum(llegadas) FILTER (WHERE anio = {hasta - 1})
+             >= {float(min_participacion)} * (SELECT total FROM total_previo), false) AS califica
     FROM m
     WHERE mes IN (SELECT mes FROM meses_comunes) OR NOT EXISTS (SELECT 1 FROM meses_comunes)
     GROUP BY ALL
@@ -110,6 +128,26 @@ def ranking_paises(con, top: int = 15, **filtros) -> pd.DataFrame:
     LIMIT {int(top)}
     """
     return con.execute(sql, p).df()
+
+
+def idiomas_principales(con, top: int = 3, **filtros) -> pd.DataFrame:
+    """P2: idiomas de atención con más llegadas en el último año del rango, como parte del
+    total de llegadas con los filtros activos. 'Varios' (los agregados "Otros ...") cuenta
+    en el total pero no se lista."""
+    base_sql, p = _base(**{**filtros, "desde": filtros["hasta"]})
+    sql = f"""
+    WITH t AS (SELECT p.idioma, sum(f.llegadas) AS llegadas {base_sql} GROUP BY ALL)
+    SELECT idioma, llegadas, llegadas / (SELECT sum(llegadas) FROM t) AS participacion
+    FROM t WHERE idioma <> 'Varios'
+    ORDER BY llegadas DESC LIMIT {int(top)}
+    """
+    return con.execute(sql, p).df()
+
+
+def mas_crece(rk: pd.DataFrame) -> pd.Series | None:
+    """Fila del ranking con mayor crecimiento entre los países que califican."""
+    elegibles = rk[rk["califica"]].dropna(subset=["crecimiento"])
+    return None if elegibles.empty else elegibles.loc[elegibles["crecimiento"].idxmax()]
 
 
 def mapa_calor(con, top: int = 12, **filtros) -> pd.DataFrame:
