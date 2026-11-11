@@ -12,11 +12,11 @@ Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste,
 
 ## Hallazgos
 
-Preliminares, a validar en el notebook (día 4):
+Cifras de 2025 verificadas contra la base (serie publicada del ICT y detalle por país). LIR (aeropuerto de Liberia) es la medida de Guanacaste.
 
-1. **El país no volvió a 2019, Guanacaste sí lo superó.** En 2025 llegaron 2.943.991 turistas por todas las vías, 6,2% menos que en 2019. Por LIR llegaron 904.762, 50,9% más que en 2019.
-2. **Norteamérica sostiene el crecimiento, Europa cae.** En LIR, Canadá creció 6,2% y Estados Unidos 2,3% frente a 2024. Reino Unido bajó 22,8% y Francia 11,2%.
-3. **La temporada alta en LIR pica en marzo y toca fondo en setiembre.** En 2025 marzo tuvo 117.044 llegadas y setiembre 22.176, cinco veces menos.
+1. **Por aire el país ya superó 2019; por tierra no, y eso explica el total.** En 2025 llegaron 2.943.991 turistas por todas las vías, 6,2% menos que en 2019 (3.139.008). La vía aérea subió 11,2% (2.689.278 contra 2.418.300) y la terrestre cayó 65,3% (246.184 contra 709.134). Por LIR llegaron 904.762, 50,9% más que en 2019 (599.433).
+2. **Norteamérica sostiene el crecimiento de LIR, Europa cae.** LIR creció 2,7% frente a 2024 (+23.473 llegadas). Estados Unidos aportó +15.507 (+2,3%) y Canadá +10.212 (+6,2%), juntos 96,2% de las llegadas de LIR. Europa bajó 8,3%: Reino Unido -22,8% (de 10.267 a 7.930) y Francia -11,2%. Por todas las vías, Estados Unidos lidera con 1.627.807 llegadas (+0,4%) y entre los 15 principales el que más crece es Argentina (+28,7%).
+3. **La demanda en LIR pica en marzo y toca fondo en setiembre.** En 2025 marzo tuvo 117.044 llegadas y setiembre 22.176, 5,3 veces menos (en 2024 fue 5,0 veces). Diciembre a abril concentra 56,6% de las llegadas del año.
 
 ## Datos
 

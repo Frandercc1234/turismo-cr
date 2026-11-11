@@ -5,7 +5,7 @@
 | 1 | Descargar archivos del ICT, llenar `data/raw/archivos.csv`, explorar en `notebooks/01_exploracion.ipynb` | Sabés qué columnas, años y problemas tienen | Hecho: 2024 y 2025 |
 | 2 | Ajustar `src/limpieza.py` a los PDF reales | DataFrame limpio, sin filas de totales | Hecho |
 | 3 | `python -m src.cargar` + `pytest` | Los totales coinciden con el ICT | Base lista |
-| 4 | Responder las tres preguntas en el notebook | Tres conclusiones con cifras en el README | |
+| 4 | Responder las tres preguntas en el notebook | Tres conclusiones con cifras en el README | README listo; falta el notebook |
 | 5 | Ajustar la app: filtros, indicadores, tres gráficos | Funciona local en computadora y celular | Base lista |
 | 6 | Revisar textos y estados vacíos, publicar en Streamlit Community Cloud | Enlace público funcionando | |
 | 7 | README, capturas y video corto | Alguien entiende el proyecto en dos minutos | |
