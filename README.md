@@ -29,7 +29,7 @@ Problemas resueltos en `src/limpieza.py` y `src/cargar.py`:
 - Cuadros de 3 páginas en el anuario.
 - Un mismo país escrito distinto entre cuadros: "PANAMA" y "Panamá" quedan como uno.
 
-Cada cuadro suma igual a su fila TOTAL publicada. El informe 2025 y el anuario 2024 coinciden en los 72 meses de 2019-2024. Si el ICT cambia el diseño del PDF, la carga falla con "fuera de columna" en vez de cargar mal.
+Cada cuadro suma igual a su fila TOTAL publicada. El informe 2025 y el anuario 2024 coinciden en los 72 meses de 2019-2024. Los anuarios de 2019 a 2023 también cuadran con esas series, mes a mes. Si el ICT cambia el diseño del PDF, la carga falla con "fuera de columna" en vez de cargar mal.
 
 ## Hallazgos
 
@@ -38,20 +38,21 @@ Cifras que muestra la app con LIR (aeropuerto de Liberia, la medida de Guanacast
 1. **Por aire el país ya superó 2019; por tierra no, y eso explica el total.** En 2025 llegaron 2.943.991 turistas por todas las vías, 6,2% menos que en 2019. La vía aérea subió 11,2% y la terrestre cayó 65,3%. Por LIR llegaron 904.762 (+50,9%) y en diciembre 114.686 (+63,5% contra diciembre de 2019).
 2. **Estados Unidos y Canadá sostienen a LIR; Europa cae.** LIR creció 2,7% contra 2024. Estados Unidos lidera con 695.273 llegadas (+2,3%) y Canadá es el que más crece entre los 10 principales (+6,2%). Reino Unido bajó 22,8%, y el inglés es el idioma de 97,5% de las llegadas.
 3. **La demanda pica en marzo y toca fondo en setiembre.** Con años completos y sin 2020 y 2021, diciembre a abril concentra 55,0% de las llegadas. Marzo tiene 4,2 veces las llegadas de setiembre. Semana Santa cambia de mes (2024 en marzo, 2025 en abril) y mueve las comparaciones de marzo y abril.
+4. **Estados Unidos y Canadá ya superan con holgura a 2019 en LIR.** En 2025 Estados Unidos llegó a 695.273 turistas por LIR (+57,8% contra 2019) y Canadá a 173.618 (+55,4%). Estados Unidos superó el nivel de 2019 en 2022 y Canadá en 2023. Juntos son 96,0% de las llegadas a LIR, contra 92,1% en 2019.
 
 ## Datos
 
 - **Fuente:** ICT, Informes Estadísticos > Llegadas internacionales. Datos de la Dirección General de Migración y Extranjería.
-- **Archivos usados:** informe mensual dic-2025 y Anuario Estadístico de Turismo 2024. Cada cuadro va en `data/raw/archivos.csv` (archivo, página, cuadro, tipo, año, vía, URL y fecha de descarga). Los PDF originales están en `data/raw/` sin modificar.
+- **Archivos usados:** informe mensual dic-2025 y Anuarios Estadísticos de Turismo 2019 a 2024. Cada cuadro va en `data/raw/archivos.csv` (archivo, página, cuadro, tipo, año, vía, URL y fecha de descarga). Los PDF originales están en `data/raw/` sin modificar.
 - **Cobertura actual:**
-  - Detalle por país x mes: 2024 y 2025, 73 países en 8 regiones. Vías: todas, aérea, SJO, LIR, terrestre. Marítima solo 2024.
+  - Detalle por país x mes: 2019 a 2025, 74 países en 8 regiones. Vías: todas, aérea, SJO, LIR y terrestre hasta 2025; marítima hasta 2024.
   - Serie mensual publicada 2012-2025 para todas, aérea, SJO, LIR y terrestre. Marítima 2012-2024.
-  - Los dos PDF coinciden mes a mes en 2019-2024 para las cuatro vías que comparten.
+  - Los cuadros de los informes y de los anuarios coinciden mes a mes en las vías y meses que comparten. Si dos cuadros dan cifras distintas, la carga falla.
 
 ### Limitaciones
 
-- Detalle por país solo para 2024 y 2025. La pregunta 1 sin filtro usa la serie publicada; con filtro de país arranca en 2024.
-- El informe 2025 no trae vía marítima; solo existe para 2024 y antes.
+- Detalle por país solo desde 2019. Antes de 2019 existe solo la serie total publicada (desde 2012); con filtro de país o región la pregunta 1 cubre 2019 a 2025.
+- El informe 2025 no trae vía marítima; esa vía llega hasta 2024.
 - 2020 y 2021 están afectados por el cierre de fronteras. Las variaciones de esos años no son demanda normal.
 - Un mes sin dato queda vacío, no como cero.
 - El idioma se asigna por país de residencia y es una aproximación: Canadá cuenta como inglés.
@@ -112,7 +113,8 @@ tests/               pytest
 
 ## Pruebas
 
-- La suma de países por mes coincide con la fila TOTAL publicada, en los 5 cuadros.
+- La suma de países por mes coincide con la fila TOTAL publicada, en los cuadros de cada año de 2019 a 2025.
+- Para cada año con detalle por país, el TOTAL de cada cuadro coincide con la serie publicada, y la suma de países de la base coincide con ella.
 - El TOTAL de 2025 coincide con la serie 2019-2025 y los totales anuales con el Ene-Dic publicado.
 - Un país escrito distinto entre cuadros ("PANAMA" / "Panamá") queda como uno solo.
 - No hay duplicados de (fecha, país, vía) ni llegadas negativas.
@@ -122,4 +124,5 @@ tests/               pytest
 - Todo país de la base tiene idioma. Un país nuevo sin mapear hace fallar la carga y la prueba.
 - Los meses de Semana Santa coinciden con la nota del ICT: abril de 2019 a 2023 y 2025, marzo de 2024.
 - En LIR 2025 contra 2024: Estados Unidos +2,3%, Canadá +6,2% y Reino Unido -22,8%.
+- En LIR 2025 contra 2019: Estados Unidos +57,8% y Canadá +55,4%; superan 2019 en 2022 y 2023.
 - El ranking excluye las filas "Otros" y un país de 50 a 100 llegadas no gana a uno de 10.000 a 11.000.

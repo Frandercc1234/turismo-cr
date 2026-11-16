@@ -39,6 +39,7 @@ IDIOMA_POR_PAIS = {
     # Asia y el Pacífico
     "Australia": "inglés", "China": "chino", "Filipinas": "inglés", "India": "inglés",
     "Japón": "japonés", "Nueva Zelanda": "inglés", "Rep. de Corea (Sur)": "coreano",
+    "Rep. Dem. Pop. Corea (Norte)": "coreano",
     "Taiwan": "chino", "Otros Asia y el Pacífico": "Varios",
     # Caribe
     "Bahamas": "inglés", "Bermuda": "inglés", "Cuba": "español", "Haití": "francés",

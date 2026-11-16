@@ -55,6 +55,7 @@ if not DB.exists():
 
 con = conexion()
 op = q.opciones(con)
+desde_detalle = q.primer_anio_detalle(con)
 
 # ---------- Filtros ----------
 DEFAULTS = {"via": "lir" if "lir" in op["vias"] else op["vias"][0],
@@ -120,7 +121,7 @@ with st.container(border=True):
                 f"{MES_LARGO[ind.mes_semana_santa(anio)]} en {anio}. Marzo y abril juntos: {fmt(mar_abr, 'pct')} vs 2019."
             )
     if serie["llegadas_2019"].isna().all() and con_detalle:
-        st.info("Detalle por país desde 2024: no hay base 2019 para comparar.")
+        st.info(f"Detalle por país desde {desde_detalle}: no hay base 2019 para comparar.")
     grafica(g.fig_recuperacion(serie))
 
 # ---------- P2: países ----------
@@ -128,7 +129,7 @@ with st.container(border=True):
     st.subheader(f"2. ¿Qué países aportan más en {hasta}?")
     rk = q.ranking_paises(con, **filtros)
     if rk.empty:
-        st.info("Sin datos de países para este filtro. El detalle por país existe desde 2024.")
+        st.info(f"Sin datos de países para este filtro. El detalle por país existe desde {desde_detalle}.")
     elif len(rk) == 1 or len(filtros["paises"]) == 1:
         f = rk.iloc[0]
         metrica(
@@ -191,11 +192,11 @@ st.download_button("Descargar CSV de los datos filtrados", datos.to_csv(index=Fa
                    file_name="llegadas_filtradas.csv", mime="text/csv")  # fmt: skip
 
 with st.expander("Metodología y limitaciones"):
-    st.markdown("""
+    st.markdown(f"""
 - **Fuente:** Instituto Costarricense de Turismo (ICT), con datos de la Dirección General de Migración y Extranjería. Detalle de archivos y fechas de descarga en `data/raw/archivos.csv`.
 - **Llegadas:** turistas internacionales que pernoctan, por país de residencia.
 - **Vías:** "Todas" ya incluye aérea y terrestre; no se suman entre sí. El aeropuerto de Liberia (LIR) es la medida de Guanacaste.
-- **Detalle por país:** solo 2024 y 2025. Con filtro de región o país no hay base 2019.
+- **Detalle por país:** desde {desde_detalle}, con los cuadros por país del informe mensual y de los anuarios. Sin filtro de región o país se usa la serie publicada por el ICT, que empieza antes.
 - **Mayor crecimiento:** solo entre los 10 países con más llegadas cuyas llegadas del año previo sean al menos 0,5% del total de la vía ese año. Así un salto de 50 a 100 llegadas no gana a uno de 10.000 a 11.000.
 - **Idiomas:** idioma asignado por país de residencia; es una aproximación (ej. Canadá cuenta como inglés). El porcentaje es sobre todas las llegadas con los filtros activos; los agregados «Otros» cuentan en el total y no se listan.
 - **Semana Santa:** cambia de mes (2024 en marzo, 2025 en abril) y distorsiona las comparaciones de marzo y abril. En la línea temporal se marca con un rombo.

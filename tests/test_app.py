@@ -58,7 +58,9 @@ def test_filtro_pais_muestra_una_sola_metrica_en_la_pregunta_2():
     at = nueva()
     at.multiselect(key="paises").set_value(["Estados Unidos"]).run()
     assert not at.exception
-    assert any("Detalle por país desde 2024" in i.value for i in at.info)
+    # con detalle por país desde 2019, el filtro de país ya tiene base 2019 para comparar
+    assert not any("Detalle por país desde" in i.value for i in at.info)
+    assert not any("sin base 2019" in (m.delta or "") for m in at.metric)
     etiq = etiquetas(at)
     assert "Estados Unidos · 2025" in etiq
     assert "Más llegadas" not in etiq
@@ -109,6 +111,9 @@ def test_ninguna_combinacion_deja_excepciones():
         ("aerea", (2025, 2025), [], ["Estados Unidos"]),
         ("lir", (2020, 2021), [], []),
         ("lir", (2020, 2021), ["Europa"], []),
+        ("lir", (2019, 2019), ["Europa"], []),
+        ("todas", (2019, 2020), [], ["Canadá"]),
+        ("maritima", (2019, 2023), [], ["Estados Unidos"]),
     ]
     for via, rango, regiones, paises in combinaciones:
         at = nueva()

@@ -29,6 +29,11 @@ def _base(via, desde, hasta, regiones=(), paises=()) -> tuple[str, dict]:
     return JOINS + "WHERE " + " AND ".join(where), params
 
 
+def primer_anio_detalle(con: duckdb.DuckDBPyConnection) -> int:
+    """Primer año con detalle por país (fact_llegadas)."""
+    return con.execute("SELECT min(year(fecha)) FROM fact_llegadas").fetchone()[0]
+
+
 def opciones(con: duckdb.DuckDBPyConnection) -> dict:
     return {
         "vias": [r[0] for r in con.execute("SELECT DISTINCT via FROM fact_llegadas ORDER BY 1").fetchall()],
