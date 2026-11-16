@@ -40,27 +40,44 @@ def ir_a(page, app, patron: str) -> None:
 def recorrido(page, url: str) -> None:
     app = abrir(page, url)
     # 1. Métricas de la pregunta 1
-    page.wait_for_timeout(3500)
+    page.wait_for_timeout(3000)
     # 2. Gráfica de recuperación, scroll lento
     desplazar(page, 330, pasos=18, pausa_ms=140)
-    page.wait_for_timeout(4000)
+    page.wait_for_timeout(3000)
     # 3. Pregunta 2: métricas e idiomas, y luego el ranking
     ir_a(page, app, "2.")
-    page.wait_for_timeout(4000)
+    page.wait_for_timeout(3500)
     desplazar(page, 260, pasos=14, pausa_ms=140)
-    page.wait_for_timeout(4000)
+    page.wait_for_timeout(3000)
     # 4. Pregunta 3: métricas y mapa de calor
     ir_a(page, app, "3.")
-    page.wait_for_timeout(3500)
+    page.wait_for_timeout(3000)
     desplazar(page, 300, pasos=14, pausa_ms=140)
-    page.wait_for_timeout(5000)
-    # 5. Cambio de vía y vuelta arriba
+    page.wait_for_timeout(4000)
+    # 5. Filtro "Estados Unidos": la pregunta 1 compara con 2019 (detalle por país desde 2019)
     desplazar(page, -6000, pasos=24, pausa_ms=60)
-    page.wait_for_timeout(1500)
+    page.wait_for_timeout(800)
+    app.get_by_text("Más filtros").click()
+    page.wait_for_timeout(500)
+    app.locator('[data-testid="stMultiSelect"]').nth(1).click()
+    page.keyboard.type("Estados", delay=60)
+    page.wait_for_timeout(500)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(800)
+    page.keyboard.press("Escape")
+    page.mouse.click(300, 60)  # cierra el menú
+    page.wait_for_timeout(5000)
+    app.get_by_text("Más filtros").click()
+    page.wait_for_timeout(500)
+    app.get_by_role("button", name="Restablecer filtros").click()
+    page.keyboard.press("Escape")
+    page.mouse.click(300, 60)
+    page.wait_for_timeout(1200)
+    # 6. Cambio de vía
     app.get_by_label("Vía de ingreso").click()
     page.wait_for_timeout(800)
     app.get_by_role("option", name="Todas las vías").click()
-    page.wait_for_timeout(4500)
+    page.wait_for_timeout(3500)
 
 
 def grabar(url: str, carpeta: Path) -> Path:

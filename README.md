@@ -106,7 +106,8 @@ src/graficos.py      las tres gráficas
 .streamlit/          tema de Streamlit (colores, barra de herramientas mínima)
 docs/img/            capturas de la app, GIF del recorrido y recorte del PDF contra la tabla limpia
 docs/video/          recorrido.mp4
-scripts/             capturas.py y video.py (Playwright) regeneran las capturas y el video
+scripts/             capturas.py y video.py (Playwright) regeneran las capturas y el video; vigilar_produccion.py abre la app publicada y la despierta si duerme
+.github/workflows/   ci.yml (pruebas en cada push) y produccion.yml (revisa la app publicada cada 12 horas)
 app.py               Streamlit
 tests/               pytest
 ```
@@ -125,4 +126,13 @@ tests/               pytest
 - Los meses de Semana Santa coinciden con la nota del ICT: abril de 2019 a 2023 y 2025, marzo de 2024.
 - En LIR 2025 contra 2024: Estados Unidos +2,3%, Canadá +6,2% y Reino Unido -22,8%.
 - En LIR 2025 contra 2019: Estados Unidos +57,8% y Canadá +55,4%; superan 2019 en 2022 y 2023.
+- La app corre como en producción: con la base copiada a la carpeta temporal, con 8 sesiones a la vez, y con una base vacía, dañada o copiada a medias muestra un mensaje claro en vez de una traza.
+
+## Capturas
+
+<p align="center">
+  <img src="docs/img/app.png" alt="Dashboard en escritorio con el aeropuerto de Liberia (LIR) seleccionado" height="420">
+  &nbsp;
+  <img src="docs/img/app-movil.png" alt="Dashboard en celular (375 px de ancho)" height="420">
+</p>
 - El ranking excluye las filas "Otros" y un país de 50 a 100 llegadas no gana a uno de 10.000 a 11.000.

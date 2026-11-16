@@ -1,0 +1,39 @@
+name: Produccion
+
+# Abre la app publicada cada 12 horas (y a mano). Si estaba dormida, la despierta.
+# Falla si no carga en 3 minutos o si Streamlit muestra una excepción.
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+env:
+  BASE_URL: https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      # Misma versión que requirements-dev.txt
+      - name: Instalar Playwright
+        run: |
+          pip install playwright==1.65.2
+          python -m playwright install --with-deps chromium
+
+      - name: Abrir la app publicada
+        run: python scripts/vigilar_produccion.py
+
+      - name: Subir captura si falla
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: captura-produccion
+          path: capturas-produccion/
+          if-no-files-found: ignore

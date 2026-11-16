@@ -7,3 +7,4 @@ data/processed/*.duckdb.wal
 .streamlit/secrets.toml
 .venv-deploy/
 test-results/
+capturas-produccion/
