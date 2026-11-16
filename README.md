@@ -1,5 +1,7 @@
 # Turismo CR: de dónde vienen los turistas y cuándo
 
+[![CI](https://github.com/Frandercc1234/turismo-cr/actions/workflows/ci.yml/badge.svg)](https://github.com/Frandercc1234/turismo-cr/actions/workflows/ci.yml)
+
 Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste, con datos públicos del Instituto Costarricense de Turismo (ICT).
 
 ![Dashboard con el aeropuerto de Liberia (LIR) seleccionado](docs/img/app.png)

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pruebas de datos y de la app
+        run: pytest
+
+      - name: Instalar Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Pruebas en navegador
+        run: pytest -m e2e --screenshot only-on-failure --output test-results
+
+      - name: Subir capturas si falla e2e
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-playwright
+          path: test-results/
+          if-no-files-found: ignore
