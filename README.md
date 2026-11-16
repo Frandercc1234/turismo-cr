@@ -4,7 +4,7 @@
 
 Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste, con datos públicos del Instituto Costarricense de Turismo (ICT).
 
-![Dashboard con el aeropuerto de Liberia (LIR) seleccionado](docs/img/app.png)
+![Recorrido por el dashboard con el aeropuerto de Liberia (LIR) seleccionado](docs/img/recorrido.gif)
 
 | Pregunta | Cómo se responde | Decisión que permite |
 |---|---|---|
@@ -12,7 +12,7 @@ Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste,
 | ¿Qué países aportan más y cuáles crecen más rápido? | Ranking y variación interanual por país | Enfocar promoción e idiomas de atención |
 | ¿Qué meses concentran la demanda por mercado? | Mapa de calor país x mes | Planificar personal e inventario |
 
-**Demo:** [abrir la app](https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app/) · **Video:** _pendiente_
+**Demo:** [abrir la app](https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app/) · **Video:** [recorrido de 50 segundos](docs/video/recorrido.mp4)
 
 Si la app estuvo inactiva, Streamlit puede tardar unos segundos en despertarla.
 
@@ -93,7 +93,9 @@ src/indicadores.py   temporada, acumulados y Semana Santa sobre la serie filtrad
 src/estilo.py        paleta, formato español (fmt) y plantilla Plotly
 src/graficos.py      las tres gráficas
 .streamlit/          tema de Streamlit (colores, barra de herramientas mínima)
-docs/img/            captura de la app y recorte del PDF contra la tabla limpia
+docs/img/            capturas de la app, GIF del recorrido y recorte del PDF contra la tabla limpia
+docs/video/          recorrido.mp4
+scripts/             capturas.py y video.py (Playwright) regeneran las capturas y el video
 app.py               Streamlit
 tests/               pytest
 ```
