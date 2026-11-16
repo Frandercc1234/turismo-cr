@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  actions: write # para reactivar este mismo workflow
 
 env:
   BASE_URL: https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app
@@ -30,11 +29,6 @@ jobs:
         run: |
           pip install playwright==1.65.2
           python -m playwright install --with-deps chromium
-
-      - name: Reactivar este workflow (GitHub desactiva los programados tras 60 días sin actividad)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow enable produccion.yml --repo "$GITHUB_REPOSITORY"
 
       - name: Abrir la app publicada
         run: python scripts/vigilar_produccion.py
