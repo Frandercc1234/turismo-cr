@@ -6,6 +6,7 @@ Uso:
 
 from __future__ import annotations
 
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -36,8 +37,10 @@ def conexion(version: float):
     que reemplaza turismo.duckdb el proceso seguiría leyendo la base anterior.
     """
     copia = Path(tempfile.gettempdir()) / f"turismo-{version}.duckdb"
-    if not copia.exists():
-        shutil.copyfile(DB, copia)
+    if not copia.exists() or copia.stat().st_size != DB.stat().st_size:
+        parcial = copia.with_suffix(f".{os.getpid()}.tmp")
+        shutil.copyfile(DB, parcial)
+        os.replace(parcial, copia)  # atómico: nunca queda una copia a medias
     return duckdb.connect(str(copia), read_only=True)
 
 
@@ -59,12 +62,35 @@ def metrica(col, etiqueta: str, valor: str, variacion, referencia: str):
     )  # fmt: skip
 
 
-if not DB.exists():
-    st.error("No existe data/processed/turismo.duckdb. Corré `python -m src.cargar` primero.")
-    st.stop()
+def abrir_base():
+    """Devuelve (cursor, opciones) o muestra un error claro y detiene la app.
 
-con = conexion(DB.stat().st_mtime)
-op = q.opciones(con)
+    Cada ejecución del script usa su propio cursor: la conexión cacheada la comparten todas las
+    sesiones y DuckDB no la soporta en uso simultáneo (devuelve resultados vacíos o "busy").
+    """
+    if not DB.exists():
+        st.error("No existe data/processed/turismo.duckdb. Corré `python -m src.cargar` primero.")
+        st.stop()
+    try:
+        con = conexion(DB.stat().st_mtime).cursor()
+        op = q.opciones(con)
+    except duckdb.Error as e:
+        conexion.clear()
+        st.error(
+            f"No se pudo abrir la base de datos ({type(e).__name__}). "
+            "Recargá la página en unos segundos; si sigue igual, hay que volver a desplegar la app."
+        )
+        st.stop()
+    if op["actualizado"] is None or not op["anios"]:
+        conexion.clear()
+        st.error(
+            "La base de datos no tiene llegadas cargadas. Corré `python -m src.cargar` y volvé a desplegar."
+        )
+        st.stop()
+    return con, op
+
+
+con, op = abrir_base()
 desde_detalle = q.primer_anio_detalle(con)
 
 # ---------- Filtros ----------
