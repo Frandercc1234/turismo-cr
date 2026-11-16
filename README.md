@@ -51,7 +51,6 @@ Cifras que muestra la app con LIR (aeropuerto de Liberia, la medida de Guanacast
 - 2020 y 2021 están afectados por el cierre de fronteras. Las variaciones de esos años no son demanda normal.
 - Un mes sin dato queda vacío, no como cero.
 - El idioma se asigna por país de residencia y es una aproximación: Canadá cuenta como inglés.
-- _Agregar aquí los países o años que falten._
 
 ## Modelo
 

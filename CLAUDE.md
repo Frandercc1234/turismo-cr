@@ -31,3 +31,9 @@ streamlit run app.py
 ## Hecho significa
 
 Tests en verde, ruff limpio, la app abre sin errores en escritorio y en celular (ancho 375px), y las cifras cuadran con el ICT.
+
+## Archivos que te paso
+
+Antes de leer cualquier PDF, imagen, captura o documento (Word, Excel, PowerPoint), convertilo con MarkItDown: `markitdown "<archivo>" -o <archivo>.md` y trabajá sobre ese .md. Si no está instalado: `pip install "markitdown[all]"`.
+- Imágenes y capturas: MarkItDown no lee texto sin OCR. Mirá también la imagen directamente.
+- Tablas con números en PDF: MarkItDown pierde las celdas vacías. Verificá las cifras con pdfplumber por posición o contra los totales del documento.
