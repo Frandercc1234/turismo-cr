@@ -27,7 +27,8 @@ st.set_page_config(page_title="Turismo CR", layout="wide")
 
 
 @st.cache_resource
-def conexion():
+def conexion(version: float):
+    """Una conexión por versión del archivo: si la base cambia (deploy, recarga), se abre de nuevo."""
     return duckdb.connect(str(DB), read_only=True)
 
 
@@ -53,7 +54,7 @@ if not DB.exists():
     st.error("No existe data/processed/turismo.duckdb. Corré `python -m src.cargar` primero.")
     st.stop()
 
-con = conexion()
+con = conexion(DB.stat().st_mtime)
 op = q.opciones(con)
 desde_detalle = q.primer_anio_detalle(con)
 
