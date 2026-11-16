@@ -12,7 +12,9 @@ Dashboard que responde tres preguntas para una cámara de turismo de Guanacaste,
 | ¿Qué países aportan más y cuáles crecen más rápido? | Ranking y variación interanual por país | Enfocar promoción e idiomas de atención |
 | ¿Qué meses concentran la demanda por mercado? | Mapa de calor país x mes | Planificar personal e inventario |
 
-**Demo:** _pendiente_ · **Video:** _pendiente_
+**Demo:** [abrir la app](https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app/) · **Video:** _pendiente_
+
+Si la app estuvo inactiva, Streamlit puede tardar unos segundos en despertarla.
 
 ## El reto de los datos
 
