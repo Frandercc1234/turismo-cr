@@ -15,3 +15,5 @@ ignore = ["E501"]  # ruff format maneja el largo de línea
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-m 'not e2e'"
+markers = ["e2e: pruebas en navegador con Playwright (se corren con `pytest -m e2e`)"]
