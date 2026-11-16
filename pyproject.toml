@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 [tool.ruff]
 line-length = 110
 target-version = "py312"
+extend-exclude = [".venv-deploy"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

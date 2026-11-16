@@ -63,10 +63,12 @@ Esquema estrella en DuckDB (`data/processed/turismo.duckdb`):
 
 ## Correr local
 
+Python 3.14 (versión en `.python-version`). `requirements.txt` trae solo lo que usa la app; `requirements-dev.txt` agrega lo de carga, pruebas y notebook. Las versiones están fijadas.
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # 1. Poner los PDF del ICT en data/raw/ y listar cada cuadro en data/raw/archivos.csv
 python -m src.cargar            # crea data/processed/turismo.duckdb
