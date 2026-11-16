@@ -107,7 +107,7 @@ src/graficos.py      las tres gráficas
 docs/img/            capturas de la app, GIF del recorrido y recorte del PDF contra la tabla limpia
 docs/video/          recorrido.mp4
 scripts/             capturas.py y video.py (Playwright) regeneran las capturas y el video; vigilar_produccion.py abre la app publicada y la despierta si duerme
-.github/workflows/   ci.yml (pruebas en cada push) y produccion.yml (revisa la app publicada cada 12 horas)
+.github/workflows/   ci.yml (pruebas en cada push) y produccion.yml (revisa la app publicada cada 6 horas)
 app.py               Streamlit
 tests/               pytest
 ```

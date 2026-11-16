@@ -1,11 +1,15 @@
 name: Produccion
 
-# Abre la app publicada cada 12 horas (y a mano). Si estaba dormida, la despierta.
+# Abre la app publicada cada 6 horas (y a mano). Si estaba dormida, la despierta.
 # Falla si no carga en 3 minutos o si Streamlit muestra una excepción.
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write # para reactivar este mismo workflow
 
 env:
   BASE_URL: https://turismo-cr-7juydxs6ebdqwumreibouf.streamlit.app
@@ -26,6 +30,11 @@ jobs:
         run: |
           pip install playwright==1.65.2
           python -m playwright install --with-deps chromium
+
+      - name: Reactivar este workflow (GitHub desactiva los programados tras 60 días sin actividad)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow enable produccion.yml --repo "$GITHUB_REPOSITORY"
 
       - name: Abrir la app publicada
         run: python scripts/vigilar_produccion.py
