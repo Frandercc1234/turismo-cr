@@ -6,6 +6,8 @@ Uso:
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from pathlib import Path
 
 import duckdb
@@ -28,8 +30,15 @@ st.set_page_config(page_title="Turismo CR", layout="wide")
 
 @st.cache_resource
 def conexion(version: float):
-    """Una conexión por versión del archivo: si la base cambia (deploy, recarga), se abre de nuevo."""
-    return duckdb.connect(str(DB), read_only=True)
+    """Conexión a una copia de la base con nombre único por versión del archivo.
+
+    DuckDB reutiliza la instancia ya abierta para una misma ruta. Sin la copia, tras un deploy
+    que reemplaza turismo.duckdb el proceso seguiría leyendo la base anterior.
+    """
+    copia = Path(tempfile.gettempdir()) / f"turismo-{version}.duckdb"
+    if not copia.exists():
+        shutil.copyfile(DB, copia)
+    return duckdb.connect(str(copia), read_only=True)
 
 
 def mes_anio(fecha) -> str:
