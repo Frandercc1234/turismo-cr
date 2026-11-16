@@ -80,6 +80,16 @@ pytest                          # valida limpieza y totales contra el ICT
 streamlit run app.py
 ```
 
+## Actualizar los datos
+
+El ICT publica un informe nuevo cada mes. Para cargarlo:
+
+1. Descargar el informe del ICT a `data/raw/` sin modificarlo.
+2. Agregar sus cuadros a `data/raw/archivos.csv`, copiando las filas del informe anterior como modelo. Columnas: `archivo`, `pagina` (primera página del cuadro), `paginas` (cuántas ocupa), `cuadro` (número en el PDF), `tipo` (`paises` o `serie`), `anio` (solo en `paises`), `via` (`todas`, `aerea`, `sjo`, `lir`, `terrestre` o `maritima`), `url` y `fecha_descarga`.
+3. Correr `python -m src.cargar`, que reconstruye `data/processed/turismo.duckdb`. Si el ICT cambió el diseño del PDF, falla con "fuera de columna" o "Encabezado distinto": revisar esas páginas con `extraer_cuadro_pdf` en `notebooks/01_exploracion.ipynb`. Si aparece un país nuevo, falla con "Países sin idioma": agregarlo a `IDIOMA_POR_PAIS` en `src/cargar.py`.
+4. Correr `pytest`. Valida cada cuadro del manifiesto contra su fila TOTAL y exige que dos informes den las mismas cifras para un mismo mes. Si el informe agrega un año, algunas pruebas y cifras del README llevan valores fijos de 2025 (LIR contra 2024, el rango por defecto, los hallazgos): actualizarlas con las cifras de la base nueva.
+5. Hacer commit del PDF, del manifiesto y de `turismo.duckdb`, y `git push`. Streamlit Cloud redeploya solo.
+
 ## Estructura
 
 ```
