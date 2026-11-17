@@ -1,6 +1,7 @@
 """Pruebas de la app Streamlit con AppTest (sin navegador)."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,16 @@ def etiquetas(at: AppTest) -> list[str]:
     return [m.label for m in at.metric]
 
 
+def nombres_de_tarjeta(at: AppTest) -> list[str]:
+    """Nombres de país de las tarjetas «Más llegadas» y «Mayor crecimiento» (encabezados h4)."""
+    return [m.value.removeprefix("#### ") for m in at.markdown if m.value.startswith("#### ")]
+
+
+def badges(at: AppTest) -> list[str]:
+    """Etiquetas de color de esas tarjetas, por ejemplo ':green-badge[↑ +6,2% vs 2024]'."""
+    return [m.value for m in at.markdown if "-badge[" in m.value]
+
+
 def paises_del_ranking(at: AppTest) -> list[str]:
     """Nombres de país de la gráfica de ranking (la segunda gráfica de la página)."""
     spec = json.loads(at.get("plotly_chart")[1].proto.spec)
@@ -41,10 +52,10 @@ def test_valores_por_defecto():
     assert p1.startswith("1. Liberia (LIR) ya superó a 2019: ")
     assert tarjeta["Año 2025"].delta.split(" ")[0] in p1
     assert tarjeta["Todo el país (todas las vías)"].delta.split(" ")[0] in p1
-    assert p2.startswith(f"2. {tarjeta['Más llegadas'].value} lidera con ")
-    assert tarjeta["Más llegadas"].delta.split(" llegadas")[0] in p2
-    assert tarjeta["Mayor crecimiento"].value in p2
-    assert tarjeta["Mayor crecimiento"].delta.split(" ")[0] in p2
+    lider, crece = nombres_de_tarjeta(at)
+    llegadas, variacion = (re.search(r"\[(?:↑ |↓ )?(\S+)", b).group(1) for b in badges(at))
+    assert p2.startswith(f"2. {lider} lidera con {llegadas} llegadas")
+    assert crece in p2 and variacion in p2
     assert p3.startswith("3. Marzo es el mes pico")
     assert tarjeta["Temporada alta (dic-abr)"].value in p3
     assert at.selectbox(key="via").value == "lir"
@@ -70,8 +81,7 @@ def test_filtro_pais_muestra_una_sola_metrica_en_la_pregunta_2():
     assert not any("sin base 2019" in (m.delta or "") for m in at.metric)
     etiq = etiquetas(at)
     assert "Estados Unidos · 2025" in etiq
-    assert "Más llegadas" not in etiq
-    assert "Mayor crecimiento" not in etiq
+    assert nombres_de_tarjeta(at) == []  # con un solo país no hay tarjetas de líder ni de crecimiento
 
 
 def test_filtro_region_europa_solo_rankea_paises_de_europa():
@@ -82,8 +92,16 @@ def test_filtro_region_europa_solo_rankea_paises_de_europa():
     europa = {p for (p,) in con.execute("SELECT pais FROM dim_pais WHERE region = 'Europa'").fetchall()}
     ranking = paises_del_ranking(at)
     assert ranking and set(ranking) <= europa
-    lider = next(m.value for m in at.metric if m.label == "Más llegadas")
+    lider = nombres_de_tarjeta(at)[0]
     assert lider in europa
+
+
+def test_un_nombre_largo_va_en_un_encabezado_y_no_en_un_metric_que_lo_recortaria():
+    at = nueva()
+    at.multiselect(key="regiones").set_value(["Caribe"]).run()
+    assert not at.exception
+    assert nombres_de_tarjeta(at)[0] == "República Dominicana"
+    assert "República Dominicana" not in [m.value for m in at.metric]
 
 
 def test_rango_2020_2021_pide_un_anio_completo():

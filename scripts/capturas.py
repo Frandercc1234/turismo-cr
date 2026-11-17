@@ -23,11 +23,16 @@ def seccion(app, patron: str):
 
 
 def secciones(pagina, app, salida: Path, sufijo: str) -> None:
+    ventana = pagina.viewport_size
     for patron, nombre in SECCIONES:
         elemento = seccion(app, patron)
+        # la ventana tiene que ser más alta que la sección; si no, Streamlit no dibuja lo que queda fuera
+        pagina.set_viewport_size({"width": ventana["width"], "height": 2600})
+        pagina.wait_for_timeout(800)
         elemento.scroll_into_view_if_needed()
         pagina.wait_for_timeout(1000)
         elemento.screenshot(path=salida / f"{nombre}{sufijo}.png")
+    pagina.set_viewport_size(ventana)
 
 
 def main() -> None:

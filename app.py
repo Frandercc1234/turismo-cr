@@ -63,6 +63,19 @@ def metrica(col, etiqueta: str, valor: str, variacion, referencia: str):
     )  # fmt: skip
 
 
+def tarjeta_nombre(col, etiqueta: str, nombre: str, detalle: str, variacion=None, ayuda: str | None = None):
+    """Tarjeta para un nombre de país. st.metric recorta con '…' los valores largos ('República Domi…' a 375 px);
+    con un encabezado el nombre se parte en líneas y se lee completo. El detalle va en una etiqueta de color."""
+    with col.container(border=True):
+        st.caption(etiqueta, help=ayuda)
+        st.markdown(f"#### {nombre}")
+        if variacion is None or variacion != variacion:
+            st.markdown(f":gray-badge[{detalle}]")
+        else:
+            color, flecha = ("green", "↑") if variacion >= 0 else ("red", "↓")
+            st.markdown(f":{color}-badge[{flecha} {detalle}]")
+
+
 def abrir_base():
     """Devuelve (cursor, opciones) o muestra un error claro y detiene la app.
 
@@ -189,13 +202,12 @@ with st.container(border=True):
         lider, crece = rk.iloc[0], q.mas_crece(rk)
         st.subheader(titulos.paises(hasta, lider.to_dict(), None if crece is None else crece.to_dict()))
         cols = st.columns(2)
-        cols[0].metric("Más llegadas", lider["pais"], f"{fmt(lider['llegadas'])} llegadas",
-                       delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+        tarjeta_nombre(cols[0], "Más llegadas", lider["pais"], f"{fmt(lider['llegadas'])} llegadas")
         if crece is not None:
-            cols[1].metric(
-                "Mayor crecimiento", crece["pais"], f"{fmt(crece['crecimiento'], 'pct')} vs {hasta - 1}",
-                border=True,
-                help=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los que en {hasta - 1} "
+            tarjeta_nombre(
+                cols[1], "Mayor crecimiento", crece["pais"],
+                f"{fmt(crece['crecimiento'], 'pct')} vs {hasta - 1}", crece["crecimiento"],
+                ayuda=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los que en {hasta - 1} "
                 f"tenían al menos {fmt(q.MIN_PARTICIPACION, 'part')} de las llegadas de la vía.",
             )  # fmt: skip
         idiomas = q.idiomas_principales(con, **filtros)
