@@ -53,7 +53,7 @@ def recorrido(page, url: str) -> None:
     ir_a(page, app, "3.")
     page.wait_for_timeout(3000)
     desplazar(page, 300, pasos=14, pausa_ms=140)
-    page.wait_for_timeout(4000)
+    page.wait_for_timeout(3000)
     # 5. Filtro "Estados Unidos": la pregunta 1 compara con 2019 (detalle por país desde 2019)
     desplazar(page, -6000, pasos=24, pausa_ms=60)
     page.wait_for_timeout(800)
