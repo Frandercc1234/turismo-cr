@@ -12,18 +12,38 @@ import plotly.graph_objects as go
 MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"]
 
 SUPERFICIE = "#fcfcfb"
+FONDO_SECUNDARIO = "#f3f2ee"  # secondaryBackgroundColor del tema (selectores, métricas)
 TINTA = "#0b0b0b"
 TINTA_2 = "#52514e"
-TINTA_TENUE = "#898781"
+TINTA_TENUE = "#6e6c66"  # texto secundario: 5,1:1 sobre SUPERFICIE y 4,7:1 sobre FONDO_SECUNDARIO
 GRILLA = "#e1e0d9"
 EJE = "#c3c2b7"
-FUENTE = '"Source Sans Pro", "Source Sans 3", system-ui, sans-serif'
+FUENTE = '"Source Sans Pro", "Source Sans 3", system-ui, sans-serif'  # lectura (cuerpo del tema)
+FUENTE_TITULO = '"Fraunces", Georgia, "Times New Roman", serif'  # títulos y cifras (headingFont del tema)
 
-COLOR_SERIE = "#2a78d6"  # serie principal de la línea de tiempo
-COLOR_REFERENCIA = TINTA_TENUE  # comparación (mismo mes 2019)
-COLOR_VARIACION = {"sube": "#0ca30c", "baja": "#d03b3b", "sin_dato": TINTA_TENUE}  # marcas (barras)
-SECUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
+# Un solo color propio (verde azulado, el del Pacífico) para la serie, el tema y la escala secuencial.
+COLOR_SERIE = "#00818d"  # 4,5:1 sobre SUPERFICIE; es el paso 5 de SECUENCIAL
+COLOR_REFERENCIA = (
+    "#898781"  # solo marca (línea del mismo mes 2019): 3:1 basta, y sigue más claro que la serie
+)
+VERDE = "#527a00"  # sube: marca de las barras y texto de las variaciones (greenColor del tema)
+ROJO = "#c93636"  # baja (redColor del tema): 4,6:1 incluso sobre FONDO_SECUNDARIO
+COLOR_VARIACION = {"sube": VERDE, "baja": ROJO, "sin_dato": COLOR_REFERENCIA}  # marcas (barras)
+# 7 pasos del mismo matiz (OKLCH 205), de claro a oscuro con la luminancia estrictamente decreciente
+SECUENCIAL = ["#daf4f7", "#b0e2e8", "#7bc9d2", "#45acb7", COLOR_SERIE, "#00626a", "#03464c"]
 ESCALA_SECUENCIAL = [[i / (len(SECUENCIAL) - 1), c] for i, c in enumerate(SECUENCIAL)]
+
+
+def _luminancia(color: str) -> float:
+    canales = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+    r, g, b = (c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in canales)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contraste(a: str, b: str) -> float:
+    """Razón de contraste WCAG entre dos colores '#rrggbb' (4,5 es el mínimo AA para texto, 3 para marcas)."""
+    claro, oscuro = sorted((_luminancia(a), _luminancia(b)), reverse=True)
+    return (claro + 0.05) / (oscuro + 0.05)
 
 
 def fmt(x, tipo: str = "n") -> str:
@@ -72,8 +92,9 @@ def _plantilla() -> go.layout.Template:
             ),  # fmt: skip
             xaxis=dict(showgrid=False, **eje),
             yaxis=dict(gridcolor=GRILLA, gridwidth=1, zeroline=False, **eje),
+            title=dict(font=dict(family=FUENTE_TITULO, size=16, color=TINTA)),
             hoverlabel=dict(
-                bgcolor=SUPERFICIE, bordercolor=EJE, font=dict(family=FUENTE, size=13, color=TINTA)
+                bgcolor=SUPERFICIE, bordercolor=EJE, font=dict(family=FUENTE_TITULO, size=13, color=TINTA)
             ),
         )
     )

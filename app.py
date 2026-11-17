@@ -17,6 +17,7 @@ import streamlit as st
 from src import consultas as q
 from src import graficos as g
 from src import indicadores as ind
+from src import titulos
 from src.estilo import MESES_CORTOS, fmt
 
 DB = Path(__file__).parent / "data" / "processed" / "turismo.duckdb"
@@ -60,6 +61,19 @@ def metrica(col, etiqueta: str, valor: str, variacion, referencia: str):
         delta_arrow="auto" if hay else "off",
         delta=f"{fmt(variacion, 'pct')} {referencia}" if hay else "sin base 2019",
     )  # fmt: skip
+
+
+def tarjeta_nombre(col, etiqueta: str, nombre: str, detalle: str, variacion=None, ayuda: str | None = None):
+    """Tarjeta para un nombre de país. st.metric recorta con '…' los valores largos ('República Domi…' a 375 px);
+    con un encabezado el nombre se parte en líneas y se lee completo. El detalle va en una etiqueta de color."""
+    with col.container(border=True):
+        st.caption(etiqueta, help=ayuda)
+        st.markdown(f"#### {nombre}")
+        if variacion is None or variacion != variacion:
+            st.markdown(f":gray-badge[{detalle}]")
+        else:
+            color, flecha = ("green", "↑") if variacion >= 0 else ("red", "↓")
+            st.markdown(f":{color}-badge[{flecha} {detalle}]")
 
 
 def abrir_base():
@@ -134,8 +148,6 @@ if serie.empty:
 
 # ---------- P1: recuperación ----------
 with st.container(border=True):
-    st.subheader("1. ¿El mercado ya se recuperó?")
-    st.caption(f"{via}, contra el mismo mes de 2019.")
     ult = serie.dropna(subset=["llegadas"]).iloc[-1]
     anio = ult["fecha"].year
     acum = ind.acumulado_vs_2019(serie, anio)
@@ -143,9 +155,19 @@ with st.container(border=True):
     if filtros["via"] != "todas" and not con_detalle:
         sp = q.serie_mensual(con, **{**filtros, "via": "todas"})
         pais = ind.acumulado_vs_2019(sp, anio)
+    total, variacion, n = acum
+    st.subheader(
+        titulos.recuperacion(
+            titulos.sujeto(filtros["via"], filtros["regiones"], filtros["paises"]),
+            variacion,
+            str(anio) if n == 12 else f"{anio} ({n} meses)",
+            total,
+            pais[1] if pais else None,
+        )
+    )
+    st.caption(f"{via}, contra el mismo mes de 2019.")
     cols = st.columns(3 if pais else 2)
     metrica(cols[0], mes_anio(ult["fecha"]), fmt(ult["llegadas"]), ult["vs_2019"], "vs mismo mes 2019")
-    total, variacion, n = acum
     metrica(cols[1], f"Año {anio}" if n == 12 else f"{anio} ({n} meses)", fmt(total), variacion, "vs 2019")
     if pais:
         metrica(cols[2], "Todo el país (todas las vías)", fmt(pais[0]), pais[1], "vs 2019")
@@ -162,12 +184,13 @@ with st.container(border=True):
 
 # ---------- P2: países ----------
 with st.container(border=True):
-    st.subheader(f"2. ¿Qué países aportan más en {hasta}?")
     rk = q.ranking_paises(con, **filtros)
     if rk.empty:
+        st.subheader(f"2. ¿Qué países aportan más en {hasta}?")
         st.info(f"Sin datos de países para este filtro. El detalle por país existe desde {desde_detalle}.")
     elif len(rk) == 1 or len(filtros["paises"]) == 1:
         f = rk.iloc[0]
+        st.subheader(titulos.paises(hasta, f.to_dict(), unico=True))
         metrica(
             st.columns(2)[0],
             f"{f['pais']} · {hasta}",
@@ -177,15 +200,21 @@ with st.container(border=True):
         )
     else:
         lider, crece = rk.iloc[0], q.mas_crece(rk)
+        # «el que más crece» solo vale entre los países que cumplen el mínimo del cálculo (q.MIN_PARTICIPACION)
+        regla = titulos.mercados_que_cuentan(hasta, q.MIN_PARTICIPACION)
+        st.subheader(
+            titulos.paises(
+                hasta, lider.to_dict(), None if crece is None else crece.to_dict(), minimo=q.MIN_PARTICIPACION
+            )
+        )
         cols = st.columns(2)
-        cols[0].metric("Más llegadas", lider["pais"], f"{fmt(lider['llegadas'])} llegadas",
-                       delta_color="off", delta_arrow="off", border=True)  # fmt: skip
+        tarjeta_nombre(cols[0], "Más llegadas", lider["pais"], f"{fmt(lider['llegadas'])} llegadas")
         if crece is not None:
-            cols[1].metric(
-                "Mayor crecimiento", crece["pais"], f"{fmt(crece['crecimiento'], 'pct')} vs {hasta - 1}",
-                border=True,
-                help=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los que en {hasta - 1} "
-                f"tenían al menos {fmt(q.MIN_PARTICIPACION, 'part')} de las llegadas de la vía.",
+            tarjeta_nombre(
+                cols[1], f"Mayor crecimiento entre los {regla}", crece["pais"],
+                f"{fmt(crece['crecimiento'], 'pct')} vs {hasta - 1}", crece["crecimiento"],
+                ayuda=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los {regla}: "
+                "así un salto de 50 a 100 llegadas no gana a uno de 10.000 a 11.000.",
             )  # fmt: skip
         idiomas = q.idiomas_principales(con, **filtros)
         if not idiomas.empty:
@@ -193,20 +222,24 @@ with st.container(border=True):
                 "Idiomas: "
                 + " · ".join(f"{i.idioma} {fmt(i.participacion, 'part')}" for i in idiomas.itertuples())
             )
-        grafica(g.fig_ranking(rk))
+        grafica(g.fig_ranking(rk, regla))
+        aviso = ""
+        if (~rk["califica"] & rk["crecimiento"].notna()).any():
+            aviso = f" Barras claras: no son de los {regla}, y no cuentan para «mayor crecimiento»."
         st.caption(
             f"Los {len(rk)} países con más llegadas, ordenados por crecimiento: mismos meses de {hasta} contra "
-            f"{hasta - 1}. Bajo cada país: variación · llegadas de {hasta}. Sin las filas agregadas «Otros»."
+            f"{hasta - 1}. Bajo cada país: variación · llegadas de {hasta}. Sin las filas agregadas «Otros».{aviso}"
         )
 
 # ---------- P3: estacionalidad ----------
 with st.container(border=True):
-    st.subheader("3. ¿Qué meses concentran la demanda?")
     conc, perfil = ind.concentracion_temporada(serie), ind.perfil_mensual(serie)
     if conc is None:
+        st.subheader("3. ¿Qué meses concentran la demanda?")
         st.info("Hace falta al menos un año completo en el rango (sin 2020 ni 2021) para medir la temporada.")
     else:
         pico, valle = perfil.idxmax(), perfil.idxmin()
+        st.subheader(titulos.estacionalidad(conc, pico))
         cols = st.columns(3)
         cols[0].metric("Temporada alta (dic-abr)", fmt(conc, "part"), "de las llegadas del año",
                        delta_color="off", delta_arrow="off", border=True)  # fmt: skip

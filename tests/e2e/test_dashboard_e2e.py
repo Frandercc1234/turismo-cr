@@ -44,7 +44,7 @@ def pagina(browser, url_app, pantalla) -> Page:
 @pytest.fixture
 def app(pagina):
     """Donde están los elementos de la app: la página (local) o el iframe de Streamlit Cloud."""
-    return pagina.frame_locator(IFRAME) if os.environ.get("BASE_URL") else pagina
+    return pagina.frame_locator(IFRAME) if "streamlit.app" in os.environ.get("BASE_URL", "") else pagina
 
 
 def abrir(page: Page, app, url: str) -> None:
@@ -88,6 +88,18 @@ def test_cambiar_la_via_actualiza_la_pregunta_1(pagina, app, url_app):
     app.get_by_role("option", name="Todas las vías").click()
     expect(app.get_by_text("Todas las vías, contra el mismo mes de 2019.")).to_be_visible(timeout=20_000)
     assert app.locator('[data-testid="stException"]').count() == 0
+
+
+def test_ningun_texto_se_recorta_con_puntos_suspensivos_en_movil(pagina, app, url_app, pantalla):
+    if pantalla != "movil":
+        pytest.skip("Solo aplica a móvil")
+    abrir(pagina, app, url_app)
+    recortados = app.locator("body").evaluate(
+        """() => [...document.querySelectorAll('body *')]
+            .filter(e => getComputedStyle(e).textOverflow === 'ellipsis' && e.scrollWidth > e.clientWidth)
+            .map(e => e.innerText.trim().slice(0, 40))"""
+    )
+    assert recortados == [], f"textos recortados a 375 px: {recortados}"
 
 
 def test_sin_scroll_horizontal_en_movil(pagina, app, url_app, pantalla):
