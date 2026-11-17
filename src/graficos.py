@@ -78,9 +78,17 @@ def fig_recuperacion(serie: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def fig_ranking(rk: pd.DataFrame) -> go.Figure:
-    """P2: crecimiento del último año contra el anterior, por país. Verde sube, rojo baja."""
+OPACIDAD_NO_CUENTA = 0.4
+
+
+def fig_ranking(rk: pd.DataFrame, regla: str | None = None) -> go.Figure:
+    """P2: crecimiento del último año contra el anterior, por país. Verde sube, rojo baja.
+
+    Las barras de los países que no cumplen el mínimo de «mayor crecimiento» (columna `califica`)
+    salen más claras; `regla` describe ese mínimo en el hover.
+    """
     d = rk.dropna(subset=["crecimiento"]).sort_values("crecimiento", ascending=False)
+    nota = f"<br><i>No cuenta para «mayor crecimiento»: no es uno de los {regla}</i>" if regla else ""
     # La etiqueta va bajo el nombre del país: en pantallas angostas una etiqueta al final de la barra se recorta.
     nombres = [
         f"{p}<br><span style='color:{TINTA_TENUE}'>{fmt(c, 'pct')} · {fmt(n)}</span>"
@@ -89,10 +97,16 @@ def fig_ranking(rk: pd.DataFrame) -> go.Figure:
     fig = go.Figure(
         go.Bar(
             x=d["crecimiento"], y=d["pais"], orientation="h",
-            marker_color=[color_variacion(c) for c in d["crecimiento"]],
+            marker=dict(
+                color=[color_variacion(c) for c in d["crecimiento"]],
+                opacity=[1 if q else OPACIDAD_NO_CUENTA for q in d["califica"]],
+            ),
             customdata=[
                 f"Variación: {fmt(c, 'pct')}<br>Llegadas: {fmt(n)}<br>Año anterior: {fmt(p)}"
-                for c, n, p in zip(d["crecimiento"], d["llegadas"], d["llegadas_previo"], strict=True)
+                + ("" if q else nota)
+                for c, n, p, q in zip(
+                    d["crecimiento"], d["llegadas"], d["llegadas_previo"], d["califica"], strict=True
+                )
             ],
             hovertemplate="<b>%{y}</b><br>%{customdata}<extra></extra>",
         )

@@ -49,8 +49,19 @@ def recuperacion(quien: str, variacion, periodo: str, total, variacion_pais=None
     return f"{frase}; el país entero aún no ({fmt(variacion_pais, 'pct')})"
 
 
-def paises(hasta: int, lider: dict, crece: dict | None = None, unico: bool = False) -> str:
-    """Pregunta 2. `lider` y `crece` traen pais, llegadas y crecimiento (puede faltar el crecimiento)."""
+def mercados_que_cuentan(hasta: int, minimo: float) -> str:
+    """Regla de «mayor crecimiento», con el mismo mínimo que usa el cálculo (q.MIN_PARTICIPACION)."""
+    return f"países con al menos {fmt(minimo, 'part')} de las llegadas de {hasta - 1}"
+
+
+def paises(
+    hasta: int, lider: dict, crece: dict | None = None, unico: bool = False, minimo: float | None = None
+) -> str:
+    """Pregunta 2. `lider` y `crece` traen pais, llegadas y crecimiento (puede faltar el crecimiento).
+
+    `minimo` es la participación mínima que usa el cálculo de «mayor crecimiento»; es obligatoria
+    cuando hay `crece`, porque «el que más crece» solo vale entre los países que cumplen esa regla.
+    """
     if unico:
         frase = f"2. {lider['pais']} recibió {fmt(lider['llegadas'])} turistas en {hasta}"
         c = lider.get("crecimiento")
@@ -58,14 +69,18 @@ def paises(hasta: int, lider: dict, crece: dict | None = None, unico: bool = Fal
     frase = f"2. {lider['pais']} lidera con {fmt(lider['llegadas'])} llegadas en {hasta}"
     if crece is None:
         return frase
+    if minimo is None:
+        raise ValueError("«el que más crece» necesita el mínimo de llegadas que usa el cálculo")
+    regla = mercados_que_cuentan(hasta, minimo)
+    pct = fmt(crece["crecimiento"], "pct")
     if crece["pais"] == lider["pais"]:
-        return f"{frase} y es el que más crece ({fmt(crece['crecimiento'], 'pct')})"
-    return f"{frase}; {crece['pais']} es el que más crece ({fmt(crece['crecimiento'], 'pct')})"
+        return f"{frase} y, entre los {regla}, es el que más crece ({pct})"
+    return f"{frase}; entre los {regla}, {crece['pais']} es el que más crece ({pct})"
 
 
 def estacionalidad(concentracion: float, mes_pico: int) -> str:
-    """Pregunta 3. `mes_pico` va de 1 a 12."""
+    """Pregunta 3. `mes_pico` va de 1 a 12; es el del total de llegadas, no el de cada fila del mapa."""
     return (
-        f"3. {_mayuscula(MESES_LARGOS[mes_pico - 1])} es el mes pico; "
+        f"3. {_mayuscula(MESES_LARGOS[mes_pico - 1])} es el mes pico del total; "
         f"diciembre a abril concentra {fmt(concentracion, 'part')} de las llegadas"
     )

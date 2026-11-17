@@ -10,6 +10,9 @@ pytest.importorskip("duckdb")
 import duckdb  # noqa: E402
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
+from src import consultas as q  # noqa: E402
+from src import titulos  # noqa: E402
+
 RAIZ = Path(__file__).parent.parent
 APP = RAIZ / "app.py"
 DB = RAIZ / "data" / "processed" / "turismo.duckdb"
@@ -56,7 +59,8 @@ def test_valores_por_defecto():
     llegadas, variacion = (re.search(r"\[(?:↑ |↓ )?(\S+)", b).group(1) for b in badges(at))
     assert p2.startswith(f"2. {lider} lidera con {llegadas} llegadas")
     assert crece in p2 and variacion in p2
-    assert p3.startswith("3. Marzo es el mes pico")
+    assert titulos.mercados_que_cuentan(2025, q.MIN_PARTICIPACION) in p2  # el título dice la regla
+    assert p3.startswith("3. Marzo es el mes pico del total")
     assert tarjeta["Temporada alta (dic-abr)"].value in p3
     assert at.selectbox(key="via").value == "lir"
     assert at.slider(key="rango").value == (2019, 2025)
@@ -102,6 +106,27 @@ def test_un_nombre_largo_va_en_un_encabezado_y_no_en_un_metric_que_lo_recortaria
     assert not at.exception
     assert nombres_de_tarjeta(at)[0] == "República Dominicana"
     assert "República Dominicana" not in [m.value for m in at.metric]
+
+
+@pytest.mark.parametrize(
+    ("via", "regiones"), [("lir", []), ("todas", []), ("terrestre", []), ("todas", ["Europa"])]
+)
+def test_el_pais_del_titulo_es_el_primero_del_grafico_que_cumple_la_regla(via, regiones):
+    at = nueva()
+    at.selectbox(key="via").set_value(via)
+    at.multiselect(key="regiones").set_value(regiones).run()
+    assert not at.exception
+    titulo = [s.value for s in at.subheader][1]
+    grafico = paises_del_ranking(at)  # ordenado por crecimiento, de mayor a menor
+    con = duckdb.connect(str(DB), read_only=True)
+    rk = q.ranking_paises(con, via=via, desde=2019, hasta=2025, regiones=regiones, paises=[])
+    cuenta = dict(zip(rk["pais"], rk["califica"], strict=True))
+    primero = next(p for p in grafico if cuenta[p])
+    assert primero in titulo and "es el que más crece" in titulo
+    assert titulos.mercados_que_cuentan(2025, q.MIN_PARTICIPACION) in titulo
+    assert not any(cuenta[p] for p in grafico[: grafico.index(primero)])  # lo que está más arriba no cuenta
+    barras = json.loads(at.get("plotly_chart")[1].proto.spec)["data"][0]
+    assert [o == 1 for o in barras["marker"]["opacity"]] == [cuenta[p] for p in barras["y"]]
 
 
 def test_rango_2020_2021_pide_un_anio_completo():

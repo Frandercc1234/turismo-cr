@@ -200,15 +200,21 @@ with st.container(border=True):
         )
     else:
         lider, crece = rk.iloc[0], q.mas_crece(rk)
-        st.subheader(titulos.paises(hasta, lider.to_dict(), None if crece is None else crece.to_dict()))
+        # «el que más crece» solo vale entre los países que cumplen el mínimo del cálculo (q.MIN_PARTICIPACION)
+        regla = titulos.mercados_que_cuentan(hasta, q.MIN_PARTICIPACION)
+        st.subheader(
+            titulos.paises(
+                hasta, lider.to_dict(), None if crece is None else crece.to_dict(), minimo=q.MIN_PARTICIPACION
+            )
+        )
         cols = st.columns(2)
         tarjeta_nombre(cols[0], "Más llegadas", lider["pais"], f"{fmt(lider['llegadas'])} llegadas")
         if crece is not None:
             tarjeta_nombre(
-                cols[1], "Mayor crecimiento", crece["pais"],
+                cols[1], f"Mayor crecimiento entre los {regla}", crece["pais"],
                 f"{fmt(crece['crecimiento'], 'pct')} vs {hasta - 1}", crece["crecimiento"],
-                ayuda=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los que en {hasta - 1} "
-                f"tenían al menos {fmt(q.MIN_PARTICIPACION, 'part')} de las llegadas de la vía.",
+                ayuda=f"Entre los {len(rk)} países con más llegadas. Cuentan solo los {regla}: "
+                "así un salto de 50 a 100 llegadas no gana a uno de 10.000 a 11.000.",
             )  # fmt: skip
         idiomas = q.idiomas_principales(con, **filtros)
         if not idiomas.empty:
@@ -216,10 +222,13 @@ with st.container(border=True):
                 "Idiomas: "
                 + " · ".join(f"{i.idioma} {fmt(i.participacion, 'part')}" for i in idiomas.itertuples())
             )
-        grafica(g.fig_ranking(rk))
+        grafica(g.fig_ranking(rk, regla))
+        aviso = ""
+        if (~rk["califica"] & rk["crecimiento"].notna()).any():
+            aviso = f" Barras claras: no son de los {regla}, y no cuentan para «mayor crecimiento»."
         st.caption(
             f"Los {len(rk)} países con más llegadas, ordenados por crecimiento: mismos meses de {hasta} contra "
-            f"{hasta - 1}. Bajo cada país: variación · llegadas de {hasta}. Sin las filas agregadas «Otros»."
+            f"{hasta - 1}. Bajo cada país: variación · llegadas de {hasta}. Sin las filas agregadas «Otros».{aviso}"
         )
 
 # ---------- P3: estacionalidad ----------
