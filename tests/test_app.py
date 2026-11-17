@@ -35,11 +35,18 @@ def paises_del_ranking(at: AppTest) -> list[str]:
 def test_valores_por_defecto():
     at = nueva()
     assert not at.exception
-    assert [s.value for s in at.subheader] == [
-        "1. ¿El mercado ya se recuperó?",
-        "2. ¿Qué países aportan más en 2025?",
-        "3. ¿Qué meses concentran la demanda?",
-    ]
+    p1, p2, p3 = (s.value for s in at.subheader)
+    # cada título repite cifras que la app ya muestra en sus tarjetas: salen de los mismos datos
+    tarjeta = {m.label: m for m in at.metric}
+    assert p1.startswith("1. Liberia (LIR) ya superó a 2019: ")
+    assert tarjeta["Año 2025"].delta.split(" ")[0] in p1
+    assert tarjeta["Todo el país (todas las vías)"].delta.split(" ")[0] in p1
+    assert p2.startswith(f"2. {tarjeta['Más llegadas'].value} lidera con ")
+    assert tarjeta["Más llegadas"].delta.split(" llegadas")[0] in p2
+    assert tarjeta["Mayor crecimiento"].value in p2
+    assert tarjeta["Mayor crecimiento"].delta.split(" ")[0] in p2
+    assert p3.startswith("3. Marzo es el mes pico")
+    assert tarjeta["Temporada alta (dic-abr)"].value in p3
     assert at.selectbox(key="via").value == "lir"
     assert at.slider(key="rango").value == (2019, 2025)
     p1 = etiquetas(at)[:3]
