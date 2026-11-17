@@ -44,7 +44,7 @@ def pagina(browser, url_app, pantalla) -> Page:
 @pytest.fixture
 def app(pagina):
     """Donde están los elementos de la app: la página (local) o el iframe de Streamlit Cloud."""
-    return pagina.frame_locator(IFRAME) if os.environ.get("BASE_URL") else pagina
+    return pagina.frame_locator(IFRAME) if "streamlit.app" in os.environ.get("BASE_URL", "") else pagina
 
 
 def abrir(page: Page, app, url: str) -> None:

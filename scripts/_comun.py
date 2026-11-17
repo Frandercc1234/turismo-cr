@@ -60,7 +60,7 @@ def servidor():
 
 def raiz_app(page):
     """La página en local; el iframe `streamlitApp` en Streamlit Cloud."""
-    return page.frame_locator(IFRAME) if os.environ.get("BASE_URL") else page
+    return page.frame_locator(IFRAME) if "streamlit.app" in os.environ.get("BASE_URL", "") else page
 
 
 def abrir(page, url):
